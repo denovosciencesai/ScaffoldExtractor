@@ -1,7 +1,6 @@
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit.Chem import  BondType, rdFMCS
-# from MCS_similarity import *
 import numpy as np
 from tqdm import tqdm
 from collections import defaultdict, namedtuple
@@ -37,11 +36,9 @@ def smiles_list_processing(smiles_list):
     csk_smi_dict = {list(d[1].keys())[0] : list(d[1].values())[0] for d in mol_csk_data}
     csk_smiles_list = list(set(smi for smi in csk_smi_dict.values()))
     csk_mols = [find_key_by_value(csk_smi_dict, smi) for smi in csk_smiles_list]
-    # csk_sim_matrix = np.array([[fast_MCS_Sim(m1, m2)[1] for m2 in csk_mols] for m1 in csk_mols])
     csk_sim_matrix = np.array([[rdkit_MCS_Sim(m1, m2)[1] for m2 in csk_mols] for m1 in csk_mols])
 
 
-    n = csk_sim_matrix.shape[0]
     dist = 1.0 - csk_sim_matrix
     np.fill_diagonal(dist, 0.0)
 
@@ -143,7 +140,6 @@ def refine_cluster(clusters, k=0, n_iterations=5):
 			parents_sims = clusters[k][comb[0]], clusters[k][comb[1]]
 			res, mcs_sim = rdkit_MCS_Sim(comb[0], comb[1])
 			if mcs_sim >= max(*parents_sims):
-				# if mcs_sim >= 0.8:
 				if has_broken_ring(res.queryMol):
 					continue
 				else:
@@ -168,7 +164,7 @@ bond_types = {
 }
 
 
-def get_bonds_from_match(query_mol, mol, atom_match):
+def get_bonds_from_match(query_mol, atom_match):
 	cind_mind_bond_dict = dict()
 	for bond in query_mol.GetBonds():
 		idx1, idx2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
@@ -181,7 +177,7 @@ def atoms_bonds_properties_extractor(initial_mol, csk_mol, mcs_mol):
 	atom_props = dict()
 	bond_props = dict()
 	atom_match = csk_mol.GetSubstructMatch(mcs_mol)
-	cind_mind_bond_dict = get_bonds_from_match(mcs_mol, csk_mol, atom_match)
+	cind_mind_bond_dict = get_bonds_from_match(mcs_mol, atom_match)
 
 	if not atom_match:
 		return False
